@@ -138,6 +138,19 @@ contract LiquidationOperator is IUniswapV2Callee {
     // TODO: define constants used in the contract including ERC-20 tokens, Uniswap Pairs, Aave lending pools, etc. */
     //    *** Your code here ***
     // END TODO
+    address private TO_LIQUID_USER_ADDRESS =
+        0x59CE4a2AC5bC3f5F225439B2993b86B42f6d3e9F;
+    // TODO: find it!!
+    address private AAVE_LENDING_POOL_ADDRESS =
+        0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9;
+    address private UNI_V2_FACTORY_ADDRESS =
+        0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f;
+    address private USDT_ADDRESS = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
+    address private WETH_ADDRESS = 0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2;
+    address private WBTC_ADDRESS = 0x2260fac5e5542a773aa44fbcfedf7c193bc2c599;
+    uint32 private CLOSE_FACTOR = 500;
+
+    IUniswapV2Factory uniFactory = IUniswapV2Factory(UNI_V2_FACTORY_ADDRESS);
 
     // some helper function, it is totally fine if you can finish the lab without using these function
     // https://github.com/Uniswap/v2-periphery/blob/master/contracts/libraries/UniswapV2Library.sol
@@ -190,23 +203,38 @@ contract LiquidationOperator is IUniswapV2Callee {
     // required by the testing script, entry for your liquidation call
     function operate() external {
         // TODO: implement your liquidation logic
-
         // 0. security checks and initializing variables
-        //    *** Your code here ***
+        uint256 userDebtEth;
+        uint256 healthFactor;
 
-        // 1. get the target user account data & make sure it is liquidatable
-        //    *** Your code here ***
+        // 1.0 get the target user account data & make sure it is liquidatable
+        (_, userDebtEth, _, _, _, healthFactor) = ILendingPool(
+            AAVE_LENDING_POOL_ADDRESS
+        ).getUserAccountData(TO_LIQUID_USER_ADDRESS);
+        require(healthFactor < 1000, "user cannot be liquidated.");
+
+        // 1.1 Compute the amount of USDT to lend from Uniswap.
+        // Up-to-close-factor strategy, repay the close factor debt.
+        lendAmountEth = userDebtEth * CLOSE_FACTOR;
+        address wethUsdtPair = uniFactory.getPair(WETH_ADDRESS, USDT_ADDRESS);
+        // token0, token1 is sorted by address.
+        uint256(token0Reserve, token1Reserve, _) = IUniswapV2Pair(wethUsdtPair)
+            .getReserves();
+
+        uint256(ethReserve, usdtReserve) = WETH_ADDRESS < USDT_ADDRESS
+            ? (token0Reserve, token1Reserve)
+            : (token1Reserve, token0Reserve);
+        lendAmountEthUsdt = (lendAmountEth * usdtReserve) / ethReserve;
 
         // 2. call flash swap to liquidate the target user
         // based on https://etherscan.io/tx/0xac7df37a43fab1b130318bbb761861b8357650db2e2c6493b73d6da3d9581077
         // we know that the target user borrowed USDT with WBTC as collateral
         // we should borrow USDT, liquidate the target user and get the WBTC, then swap WBTC to repay uniswap
         // (please feel free to develop other workflows as long as they liquidate the target user successfully)
-        //    *** Your code here ***
 
+        //    TODO(sharu) [2]: borrow USDTs from uniswap, steps done mostly by uniswapV2Call
         // 3. Convert the profit into ETH and send back to sender
         //    *** Your code here ***
-
         // END TODO
     }
 
@@ -218,19 +246,14 @@ contract LiquidationOperator is IUniswapV2Callee {
         bytes calldata
     ) external override {
         // TODO: implement your liquidation logic
-
         // 2.0. security checks and initializing variables
         //    *** Your code here ***
-
         // 2.1 liquidate the target user
         //    *** Your code here ***
-
         // 2.2 swap WBTC for other things or repay directly
         //    *** Your code here ***
-
         // 2.3 repay
         //    *** Your code here ***
-        
         // END TODO
     }
 }
