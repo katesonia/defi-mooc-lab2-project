@@ -2,6 +2,7 @@ const { expect } = require("chai");
 const { network, ethers } = require("hardhat");
 const { BigNumber, utils }  = require("ethers");
 const { writeFile } = require('fs');
+require('dotenv').config();
 
 describe("Liquidation", function () {
   it("test", async function () {
@@ -9,8 +10,7 @@ describe("Liquidation", function () {
         method: "hardhat_reset",
         params: [{
           forking: {
-            // jsonRpcUrl: process.env.ALCHE_API,
-            jsonRpcUrl: "https://eth-mainnet.alchemyapi.io/v2/ZWY3K5QGQZ6BK0mn_rKEvo7Pf3AJ8fSo",
+            jsonRpcUrl: process.env.ALCHE_API,
             blockNumber: 12489619,
           }
         }]
