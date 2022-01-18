@@ -4,6 +4,7 @@
     "test": "npx hardhat test"
   },
   "devDependencies": {
+    "@nomiclabs/buidler": "^1.4.8",
     "@nomiclabs/hardhat-ethers": "^2.0.2",
     "@nomiclabs/hardhat-waffle": "^2.0.1",
     "chai": "^4.3.4",
