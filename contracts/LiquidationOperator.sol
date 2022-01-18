@@ -146,8 +146,8 @@ contract LiquidationOperator is IUniswapV2Callee {
     address private UNI_V2_FACTORY_ADDRESS =
         0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f;
     address private USDT_ADDRESS = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
-    address private WETH_ADDRESS = 0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2;
-    address private WBTC_ADDRESS = 0x2260fac5e5542a773aa44fbcfedf7c193bc2c599;
+    address private WETH_ADDRESS = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+    address private WBTC_ADDRESS = 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;
     uint32 private CLOSE_FACTOR = 500;
 
     IUniswapV2Factory uniFactory = IUniswapV2Factory(UNI_V2_FACTORY_ADDRESS);
@@ -208,23 +208,27 @@ contract LiquidationOperator is IUniswapV2Callee {
         uint256 healthFactor;
 
         // 1.0 get the target user account data & make sure it is liquidatable
-        (_, userDebtEth, _, _, _, healthFactor) = ILendingPool(
+        (, userDebtEth, , , , healthFactor) = ILendingPool(
             AAVE_LENDING_POOL_ADDRESS
         ).getUserAccountData(TO_LIQUID_USER_ADDRESS);
         require(healthFactor < 1000, "user cannot be liquidated.");
 
         // 1.1 Compute the amount of USDT to lend from Uniswap.
         // Up-to-close-factor strategy, repay the close factor debt.
-        lendAmountEth = userDebtEth * CLOSE_FACTOR;
+        uint256 lendAmountEth = (userDebtEth * CLOSE_FACTOR) / 1000;
         address wethUsdtPair = uniFactory.getPair(WETH_ADDRESS, USDT_ADDRESS);
         // token0, token1 is sorted by address.
-        uint256(token0Reserve, token1Reserve, _) = IUniswapV2Pair(wethUsdtPair)
+        uint256 token0Reserve;
+        uint256 token1Reserve;
+        (token0Reserve, token1Reserve, ) = IUniswapV2Pair(wethUsdtPair)
             .getReserves();
 
-        uint256(ethReserve, usdtReserve) = WETH_ADDRESS < USDT_ADDRESS
+        uint256 ethReserve;
+        uint256 usdtReserve;
+        (ethReserve, usdtReserve) = WETH_ADDRESS < USDT_ADDRESS
             ? (token0Reserve, token1Reserve)
             : (token1Reserve, token0Reserve);
-        lendAmountEthUsdt = (lendAmountEth * usdtReserve) / ethReserve;
+        uint256 lendAmountEthUsdt = (lendAmountEth * usdtReserve) / ethReserve;
 
         // 2. call flash swap to liquidate the target user
         // based on https://etherscan.io/tx/0xac7df37a43fab1b130318bbb761861b8357650db2e2c6493b73d6da3d9581077
