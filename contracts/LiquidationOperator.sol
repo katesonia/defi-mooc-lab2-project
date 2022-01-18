@@ -137,10 +137,8 @@ contract LiquidationOperator is IUniswapV2Callee {
 
     // TODO: define constants used in the contract including ERC-20 tokens, Uniswap Pairs, Aave lending pools, etc. */
     //    *** Your code here ***
-    // END TODO
     address private TO_LIQUID_USER_ADDRESS =
         0x59CE4a2AC5bC3f5F225439B2993b86B42f6d3e9F;
-    // TODO: find it!!
     address private AAVE_LENDING_POOL_ADDRESS =
         0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9;
     address private UNI_V2_FACTORY_ADDRESS =
@@ -150,7 +148,7 @@ contract LiquidationOperator is IUniswapV2Callee {
     address private WBTC_ADDRESS = 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;
     uint32 private CLOSE_FACTOR = 500;
 
-    IUniswapV2Factory uniFactory = IUniswapV2Factory(UNI_V2_FACTORY_ADDRESS);
+    // END TODO
 
     // some helper function, it is totally fine if you can finish the lab without using these function
     // https://github.com/Uniswap/v2-periphery/blob/master/contracts/libraries/UniswapV2Library.sol
@@ -216,25 +214,37 @@ contract LiquidationOperator is IUniswapV2Callee {
         // 1.1 Compute the amount of USDT to lend from Uniswap.
         // Up-to-close-factor strategy, repay the close factor debt.
         uint256 lendAmountEth = (userDebtEth * CLOSE_FACTOR) / 1000;
-        address wethUsdtPair = uniFactory.getPair(WETH_ADDRESS, USDT_ADDRESS);
         // token0, token1 is sorted by address.
+        IUniswapV2Pair uniPair = IUniswapV2Pair(
+            IUniswapV2Factory(UNI_V2_FACTORY_ADDRESS).getPair(
+                WETH_ADDRESS,
+                USDT_ADDRESS
+            )
+        );
         uint256 token0Reserve;
         uint256 token1Reserve;
-        (token0Reserve, token1Reserve, ) = IUniswapV2Pair(wethUsdtPair)
-            .getReserves();
+        (token0Reserve, token1Reserve, ) = uniPair.getReserves();
 
-        uint256 ethReserve;
+        uint256 wethReserve;
         uint256 usdtReserve;
-        (ethReserve, usdtReserve) = WETH_ADDRESS < USDT_ADDRESS
+        (wethReserve, usdtReserve) = WETH_ADDRESS < USDT_ADDRESS
             ? (token0Reserve, token1Reserve)
             : (token1Reserve, token0Reserve);
-        uint256 lendAmountEthUsdt = (lendAmountEth * usdtReserve) / ethReserve;
+        uint256 lendAmountUsdt = (lendAmountEth * usdtReserve) / wethReserve;
 
         // 2. call flash swap to liquidate the target user
         // based on https://etherscan.io/tx/0xac7df37a43fab1b130318bbb761861b8357650db2e2c6493b73d6da3d9581077
         // we know that the target user borrowed USDT with WBTC as collateral
         // we should borrow USDT, liquidate the target user and get the WBTC, then swap WBTC to repay uniswap
         // (please feel free to develop other workflows as long as they liquidate the target user successfully)
+        uint256 amount0Lend;
+        uint256 amount1Lend;
+        (amount0Lend, amount1Lend) = WETH_ADDRESS < USDT_ADDRESS
+            ? (uint256(0), lendAmountUsdt)
+            : (lendAmountUsdt, uint256(0));
+        // Lend USDT to repay aave position.
+        // TODO: Figure out what should be included in the calldata.
+        uniPair.swap(amount0Lend, amount1Lend, address(this), new bytes(0));
 
         //    TODO(sharu) [2]: borrow USDTs from uniswap, steps done mostly by uniswapV2Call
         // 3. Convert the profit into ETH and send back to sender
