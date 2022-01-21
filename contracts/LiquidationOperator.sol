@@ -339,12 +339,12 @@ contract LiquidationOperator is IUniswapV2Callee {
         _swap(wethAmount, WETH, USDT);
 
         // 2.1 liquidate the target user
-        IERC20(USDT).approve(AAVE_LENDING_POOL, type(uint256).max);
+        IERC20(USDT).approve(AAVE_LENDING_POOL, MAX_REPAYABLE_USDT);
         ILendingPool(AAVE_LENDING_POOL).liquidationCall(
             WBTC,
             USDT,
             USER,
-            type(uint256).max,
+            MAX_REPAYABLE_USDT,
             false
         );
         // 2.2 swap WBTC for other things or repay directly
