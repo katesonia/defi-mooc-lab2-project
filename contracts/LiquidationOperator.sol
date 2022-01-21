@@ -210,8 +210,7 @@ contract LiquidationOperator is IUniswapV2Callee {
         uint256 usdtReserve;
         (wethReserve, usdtReserve, ) = IUniswapV2Pair(wethUsdtPair)
             .getReserves();
-        uint256 t = getAmountIn(debt, wethReserve, usdtReserve);
-        return t;
+        return getAmountIn(debt, wethReserve, usdtReserve);
     }
 
     // required by the testing script, entry for your liquidation call
