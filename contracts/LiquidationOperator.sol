@@ -198,19 +198,6 @@ contract LiquidationOperator is IUniswapV2Callee {
     receive() external payable {}
 
     // END TODO
-
-    function getEthToBorrow(uint256 debt) private view returns (uint256) {
-        address wethUsdtPair = IUniswapV2Factory(UNI_FACTORY).getPair(
-            WETH,
-            USDT
-        );
-        uint256 wethReserve;
-        uint256 usdtReserve;
-        (wethReserve, usdtReserve, ) = IUniswapV2Pair(wethUsdtPair)
-            .getReserves();
-        return getAmountIn(debt, wethReserve, usdtReserve);
-    }
-
     function _getAmountIn(
         uint256 amountIn,
         address tokenIn,
