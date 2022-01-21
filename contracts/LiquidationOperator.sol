@@ -265,7 +265,10 @@ contract LiquidationOperator is IUniswapV2Callee {
             tokenIn,
             tokenOut
         );
-        IERC20(tokenIn).transfer(pair, amountIn);
+        require(
+            IERC20(tokenIn).transfer(pair, amountIn),
+            "Failed to transfer!"
+        );
         uint256 amount1;
         uint256 amount2;
         (amount1, amount2) = tokenIn < tokenOut
@@ -354,6 +357,9 @@ contract LiquidationOperator is IUniswapV2Callee {
             WBTC,
             WETH
         );
-        IERC20(WBTC).transfer(wbtcWethPair, btcToReturn);
+        require(
+            IERC20(WBTC).transfer(wbtcWethPair, btcToReturn),
+            "Failed to transfer!"
+        );
     }
 }
